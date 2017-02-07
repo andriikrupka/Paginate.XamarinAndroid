@@ -1,28 +1,18 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-using Android.App;
-using Android.Content;
-using Android.OS;
 using Android.Runtime;
-using Android.Views;
-using Android.Widget;
 using Android.Support.V7.Widget;
-using Java.Lang;
 
 namespace Paginate.Droid
 {
     public class RecyclerPaginate : Paginate
     {
         private RecyclerView recyclerView;
-        private Callbacks callbacks;
+        private Paginate.Callbacks callbacks;
         private int loadingTriggerThreshold;
         private WrapperAdapter wrapperAdapter;
         private WrapperSpanSizeLookup wrapperSpanSizeLookup;
-        private RecyclerView.OnScrollListener mOnScrollListener;
-        private RecyclerView.AdapterDataObserver mDataObserver;
+        private RecyclerView.OnScrollListener scrollListener;
+        private RecyclerView.AdapterDataObserver dataObserver;
 
         public RecyclerPaginate(RecyclerView recyclerView,
                  Paginate.Callbacks callbacks,
@@ -34,18 +24,17 @@ namespace Paginate.Droid
             this.recyclerView = recyclerView;
             this.callbacks = callbacks;
             this.loadingTriggerThreshold = loadingTriggerThreshold;
-            this.mOnScrollListener = new PaginateOnScrollListener(checkEndOffset);
+            this.scrollListener = new PaginateOnScrollListener(CheckEndOffset);
 
             // Attach scrolling listener in order to perform end offset check on each scroll event
-            recyclerView.AddOnScrollListener(mOnScrollListener);
-
+            recyclerView.AddOnScrollListener(scrollListener);
             if (addLoadingListItem)
             {
                 // Wrap existing adapter with new adapter that will add loading row
-                RecyclerView.Adapter adapter = recyclerView.GetAdapter();
+                var adapter = recyclerView.GetAdapter();
                 wrapperAdapter = new WrapperAdapter(adapter, loadingListItemCreator);
-                mDataObserver = new PaginateAdapterDataObserver(onAdapterDataChanged, wrapperAdapter);
-                adapter.RegisterAdapterDataObserver(mDataObserver);
+                dataObserver = new PaginateAdapterDataObserver(wrapperAdapter, OnAdapterDataChanged);
+                adapter.RegisterAdapterDataObserver(dataObserver);
                 recyclerView.SetAdapter(wrapperAdapter);
 
                 // For GridLayoutManager use separate/customisable span lookup for loading row
@@ -61,28 +50,28 @@ namespace Paginate.Droid
 
             // Trigger initial check since adapter might not have any items initially so no scrolling events upon
             // RecyclerView (that triggers check) will occur
-            checkEndOffset();
+            CheckEndOffset();
         }
 
-        public override void setHasMoreDataToLoad(bool hasMoreDataToLoad)
+        public override void SetHasMoreDataToLoad(bool hasMoreDataToLoad)
         {
             if (wrapperAdapter != null)
             {
-                wrapperAdapter.displayLoadingRow(hasMoreDataToLoad);
+                wrapperAdapter.DisplayLoadingRow = hasMoreDataToLoad;
             }
         }
 
-        public override void unbind()
+        public override void Unbind()
         {
-            recyclerView.RemoveOnScrollListener(mOnScrollListener);   // Remove scroll listener
+            recyclerView.RemoveOnScrollListener(scrollListener);   // Remove scroll listener
             if (recyclerView.GetAdapter() is WrapperAdapter)
             {
                 WrapperAdapter wrapperAdapter = (WrapperAdapter)recyclerView.GetAdapter();
-                RecyclerView.Adapter adapter = wrapperAdapter.getWrappedAdapter();
-                adapter.UnregisterAdapterDataObserver(mDataObserver); // Remove data observer
+                RecyclerView.Adapter adapter = wrapperAdapter.GetWrappedAdapter();
+                adapter.UnregisterAdapterDataObserver(dataObserver); // Remove data observer
                 recyclerView.SetAdapter(adapter);                     // Swap back original adapter
             }
-            if (recyclerView.GetLayoutManager() is GridLayoutManager && wrapperSpanSizeLookup != null)
+            if (wrapperSpanSizeLookup != null && recyclerView.GetLayoutManager() is GridLayoutManager)
             {
                 // Swap back original SpanSizeLookup
                 GridLayoutManager.SpanSizeLookup spanSizeLookup = wrapperSpanSizeLookup.getWrappedSpanSizeLookup();
@@ -90,7 +79,7 @@ namespace Paginate.Droid
             }
         }
 
-        void checkEndOffset()
+        private void CheckEndOffset()
         {
             int visibleItemCount = recyclerView.ChildCount;
             int totalItemCount = recyclerView.GetLayoutManager().ItemCount;
@@ -129,46 +118,41 @@ namespace Paginate.Droid
             }
         }
 
-        private void onAdapterDataChanged()
+        private void OnAdapterDataChanged()
         {
-            wrapperAdapter.displayLoadingRow(!callbacks.hasLoadedAllItems());
-            checkEndOffset();
+            wrapperAdapter.DisplayLoadingRow = !callbacks.hasLoadedAllItems();
+            CheckEndOffset();
         }
 
         private class PaginateOnScrollListener : RecyclerView.OnScrollListener
         {
-            private Action _scrolledCallback;
+            private Action scrolledCallback;
 
             public PaginateOnScrollListener(Action scrolledCallback)
             {
-                _scrolledCallback = scrolledCallback;
+                this.scrolledCallback = scrolledCallback;
             }
 
             protected PaginateOnScrollListener(IntPtr javaReference, JniHandleOwnership transfer)
                 : base(javaReference, transfer)
             {
-
             }
 
             public override void OnScrolled(RecyclerView recyclerView, int dx, int dy)
             {
-                _scrolledCallback();
-
-                //TODO:
-                //base.OnScrolled(recyclerView, dx, dy);
+                scrolledCallback();
             }
         }
 
         private class PaginateAdapterDataObserver : RecyclerView.AdapterDataObserver
         {
-            private Action _onAdapterDataChangedCallback;
-            private WrapperAdapter _wrapperAdapter;
+            private Action onAdapterDataChangedCallback;
+            private WrapperAdapter wrapperAdapter;
 
-            public PaginateAdapterDataObserver(Action onAdapterDataChangedCallback,
-                WrapperAdapter wrapperAdapter)
+            public PaginateAdapterDataObserver(WrapperAdapter wrapperAdapter, Action onAdapterDataChangedCallback)
             {
-                _onAdapterDataChangedCallback = onAdapterDataChangedCallback;
-                _wrapperAdapter = wrapperAdapter;
+                this.onAdapterDataChangedCallback = onAdapterDataChangedCallback;
+                this.wrapperAdapter = wrapperAdapter;
             }
 
             protected PaginateAdapterDataObserver(IntPtr javaReference, JniHandleOwnership transfer)
@@ -179,55 +163,38 @@ namespace Paginate.Droid
 
             public override void OnChanged()
             {
-                _wrapperAdapter.NotifyDataSetChanged();
-                _onAdapterDataChangedCallback();
-
-                //TODO: base
+                wrapperAdapter.NotifyDataSetChanged();
+                onAdapterDataChangedCallback();
             }
 
             public override void OnItemRangeInserted(int positionStart, int itemCount)
             {
-                _wrapperAdapter.NotifyItemRangeInserted(positionStart, itemCount);
-                _onAdapterDataChangedCallback();
-
-                //TODO: base
-                //base.OnItemRangeInserted(positionStart, itemCount);
+                wrapperAdapter.NotifyItemRangeInserted(positionStart, itemCount);
+                onAdapterDataChangedCallback();
             }
 
             public override void OnItemRangeChanged(int positionStart, int itemCount)
             {
-                _wrapperAdapter.NotifyItemRangeChanged(positionStart, itemCount);
-                _onAdapterDataChangedCallback();
-
-                //TODO
-                //base.OnItemRangeChanged(positionStart, itemCount);
+                wrapperAdapter.NotifyItemRangeChanged(positionStart, itemCount);
+                onAdapterDataChangedCallback();
             }
 
             public override void OnItemRangeChanged(int positionStart, int itemCount, Java.Lang.Object payload)
             {
-                _wrapperAdapter.NotifyItemRangeChanged(positionStart, itemCount, payload);
-                _onAdapterDataChangedCallback();
-
-                //TODO
-                //base.OnItemRangeChanged(positionStart, itemCount, payload);
+                wrapperAdapter.NotifyItemRangeChanged(positionStart, itemCount, payload);
+                onAdapterDataChangedCallback();
             }
 
             public override void OnItemRangeRemoved(int positionStart, int itemCount)
             {
-                _wrapperAdapter.NotifyItemRangeRemoved(positionStart, itemCount);
-                _onAdapterDataChangedCallback();
-
-                //TODO
-                //base.OnItemRangeRemoved(positionStart, itemCount);
+                wrapperAdapter.NotifyItemRangeRemoved(positionStart, itemCount);
+                onAdapterDataChangedCallback();
             }
 
             public override void OnItemRangeMoved(int fromPosition, int toPosition, int itemCount)
             {
-                _wrapperAdapter.NotifyItemMoved(fromPosition, toPosition);
-                _onAdapterDataChangedCallback();
-
-                //TODO
-                //base.OnItemRangeMoved(fromPosition, toPosition, itemCount);
+                wrapperAdapter.NotifyItemMoved(fromPosition, toPosition);
+                onAdapterDataChangedCallback();
             }
         }
 
@@ -239,7 +206,7 @@ namespace Paginate.Droid
             private Paginate.Callbacks callbacks;
 
             private int loadingTriggerThreshold = 5;
-            private bool _addLoadingListItem = true;
+            private bool addLoadingListItem = true;
             private RecyclerLoadingListItemCreator loadingListItemCreator;
             private LoadingListItemSpanLookup loadingListItemSpanLookup;
 
@@ -249,39 +216,39 @@ namespace Paginate.Droid
                 this.callbacks = callbacks;
             }
 
-            public PaginateBuilder setLoadingTriggerThreshold(int threshold)
+            public PaginateBuilder SetLoadingTriggerThreshold(int threshold)
             {
                 this.loadingTriggerThreshold = threshold;
                 return this;
             }
 
-            public PaginateBuilder addLoadingListItem(bool addLoadingListItem)
+            public PaginateBuilder AddLoadingListItem(bool addLoadingListItem)
             {
-                _addLoadingListItem = addLoadingListItem;
+                this.addLoadingListItem = addLoadingListItem;
                 return this;
             }
 
-            public PaginateBuilder setLoadingListItemCreator(RecyclerLoadingListItemCreator creator)
+            public PaginateBuilder SetLoadingListItemCreator(RecyclerLoadingListItemCreator creator)
             {
                 this.loadingListItemCreator = creator;
                 return this;
             }
 
-            public PaginateBuilder setLoadingListItemSpanSizeLookup(LoadingListItemSpanLookup loadingListItemSpanLookup)
+            public PaginateBuilder SetLoadingListItemSpanSizeLookup(LoadingListItemSpanLookup loadingListItemSpanLookup)
             {
                 this.loadingListItemSpanLookup = loadingListItemSpanLookup;
                 return this;
             }
 
-            public Paginate build()
+            public Paginate Build()
             {
                 if (recyclerView.GetAdapter() == null)
                 {
-                    throw new IllegalStateException("Adapter needs to be set!");
+                    throw new ArgumentNullException("Adapter needs to be set!");
                 }
                 if (recyclerView.GetLayoutManager() == null)
                 {
-                    throw new IllegalStateException("LayoutManager needs to be set on the RecyclerView");
+                    throw new ArgumentNullException("LayoutManager needs to be set on the RecyclerView");
                 }
 
                 if (loadingListItemCreator == null)
@@ -294,7 +261,7 @@ namespace Paginate.Droid
                     loadingListItemSpanLookup = new DefaultLoadingListItemSpanLookup(recyclerView.GetLayoutManager());
                 }
 
-                return new RecyclerPaginate(recyclerView, callbacks, loadingTriggerThreshold, _addLoadingListItem,
+                return new RecyclerPaginate(recyclerView, callbacks, loadingTriggerThreshold, addLoadingListItem,
                         loadingListItemCreator, loadingListItemSpanLookup);
             }
         }

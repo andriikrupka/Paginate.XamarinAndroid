@@ -65,7 +65,7 @@ namespace Paginate.XamarinAndroid.Sample
         {
             if (paginate != null)
             {
-                paginate.unbind();
+                paginate.Unbind();
             }
 
             handler.RemoveCallbacks(fakeCallback);
@@ -112,11 +112,11 @@ namespace Paginate.XamarinAndroid.Sample
             //recyclerView.SetItemAnimator(new SlideInUpAnimator());
             recyclerView.SetAdapter(adapter);
 
-            paginate = Droid.Paginate.with(recyclerView, this)
-                        .setLoadingTriggerThreshold(threshold)
-                        .addLoadingListItem(addLoadingRow)
-                        .setLoadingListItemSpanSizeLookup(new SampleLoadingListItemSpanLookup())
-                        .build();
+            paginate = Droid.Paginate.With(recyclerView, this)
+                        .SetLoadingTriggerThreshold(threshold)
+                        .AddLoadingListItem(addLoadingRow)
+                        .SetLoadingListItemSpanSizeLookup(new SampleLoadingListItemSpanLookup())
+                        .Build();
         }
 
 
@@ -124,7 +124,7 @@ namespace Paginate.XamarinAndroid.Sample
 
     public class SampleLoadingListItemSpanLookup : LoadingListItemSpanLookup
     {
-        public override int getSpanSize()
+        public override int GetSpanSize()
         {
             return RecyclerViewExampleActivity.GRID_SPAN;
         }

@@ -1,14 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
 using Android.Support.V7.Widget;
 
 namespace Paginate.Droid
@@ -22,10 +11,10 @@ namespace Paginate.Droid
             bool hasLoadedAllItems();
         }
 
-        abstract public void setHasMoreDataToLoad(bool hasMoreDataToLoad);
-        abstract public void unbind();
+        abstract public void SetHasMoreDataToLoad(bool hasMoreDataToLoad);
+        abstract public void Unbind();
 
-        public static RecyclerPaginate.PaginateBuilder with(RecyclerView recyclerView, Callbacks callback)
+        public static RecyclerPaginate.PaginateBuilder With(RecyclerView recyclerView, Callbacks callback)
         {
             return new RecyclerPaginate.PaginateBuilder(recyclerView, callback);
         }

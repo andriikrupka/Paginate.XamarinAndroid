@@ -1,14 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
 using Android.Support.V7.Widget;
 
 namespace Paginate.Droid
@@ -30,14 +19,8 @@ namespace Paginate.Droid
 
         public override int GetSpanSize(int position)
         {
-            if (wrapperAdapter.isLoadingRow(position))
-            {
-                return loadingListItemSpanLookup.getSpanSize();
-            }
-            else
-            {
-                return wrappedSpanSizeLookup.GetSpanSize(position);
-            }
+            return wrapperAdapter.IsLoadingRow(position)
+                  ? loadingListItemSpanLookup.GetSpanSize() : wrappedSpanSizeLookup.GetSpanSize(position);
         }
 
         public GridLayoutManager.SpanSizeLookup getWrappedSpanSizeLookup()

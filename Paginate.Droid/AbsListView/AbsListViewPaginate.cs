@@ -58,7 +58,7 @@ namespace Paginate.Droid
         }
 
 
-        public override void setHasMoreDataToLoad(bool hasMoreDataToLoad)
+        public override void SetHasMoreDataToLoad(bool hasMoreDataToLoad)
         {
             if (wrapperAdapter != null)
             {
@@ -73,7 +73,7 @@ namespace Paginate.Droid
                 callbacks.onLoadMore();
             }
         }
-        public override void unbind()
+        public override void Unbind()
         {
             // Swap back original scroll listener
             absListView.SetOnScrollListener(scrollListener.getDelegateScrollListener());

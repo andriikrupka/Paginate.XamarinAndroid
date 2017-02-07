@@ -9,7 +9,7 @@ namespace Paginate.Droid
 
         private RecyclerView.Adapter wrappedAdapter;
         private RecyclerLoadingListItemCreator loadingListItemCreator;
-        private bool _displayLoadingRow = true;
+        private bool displayLoadingRow = true;
 
         public WrapperAdapter(RecyclerView.Adapter adapter, RecyclerLoadingListItemCreator creator)
         {
@@ -18,13 +18,13 @@ namespace Paginate.Droid
         }
 
         public override int ItemCount
-            => _displayLoadingRow ? wrappedAdapter.ItemCount + 1 : wrappedAdapter.ItemCount;
+            => displayLoadingRow ? wrappedAdapter.ItemCount + 1 : wrappedAdapter.ItemCount;
 
         public override void OnBindViewHolder(RecyclerView.ViewHolder holder, int position)
         {
-            if (isLoadingRow(position))
+            if (IsLoadingRow(position))
             {
-                loadingListItemCreator.onBindViewHolder(holder, position);
+                loadingListItemCreator.OnBindViewHolder(holder, position);
             }
             else
             {
@@ -36,7 +36,7 @@ namespace Paginate.Droid
         {
             if (viewType == ITEM_VIEW_TYPE_LOADING)
             {
-                return loadingListItemCreator.onCreateViewHolder(parent, viewType);
+                return loadingListItemCreator.OnCreateViewHolder(parent, viewType);
             }
             else
             {
@@ -46,12 +46,12 @@ namespace Paginate.Droid
 
         public override int GetItemViewType(int position)
         {
-            return isLoadingRow(position) ? ITEM_VIEW_TYPE_LOADING : wrappedAdapter.GetItemViewType(position);
+            return IsLoadingRow(position) ? ITEM_VIEW_TYPE_LOADING : wrappedAdapter.GetItemViewType(position);
         }
 
         public override long GetItemId(int position)
         {
-            return isLoadingRow(position) ? RecyclerView.NoId : wrappedAdapter.GetItemId(position);
+            return IsLoadingRow(position) ? RecyclerView.NoId : wrappedAdapter.GetItemId(position);
         }
 
         public new bool HasStableIds
@@ -67,33 +67,32 @@ namespace Paginate.Droid
             }
         }
 
-        public RecyclerView.Adapter getWrappedAdapter()
+        public RecyclerView.Adapter GetWrappedAdapter()
         {
             return wrappedAdapter;
         }
 
-        bool isDisplayLoadingRow()
+        public bool DisplayLoadingRow
         {
-            return _displayLoadingRow;
-        }
-
-        public void displayLoadingRow(bool displayLoadingRow)
-        {
-            if (this._displayLoadingRow != displayLoadingRow)
+            get { return displayLoadingRow; }
+            set
             {
-                this._displayLoadingRow = displayLoadingRow;
-                NotifyDataSetChanged();
+                if (displayLoadingRow != value)
+                {
+                    displayLoadingRow = value;
+                    NotifyDataSetChanged();
+                }
             }
         }
 
-        public bool isLoadingRow(int position)
+        public bool IsLoadingRow(int position)
         {
-            return _displayLoadingRow && position == getLoadingRowPosition();
+            return displayLoadingRow && position == GetLoadingRowPosition();
         }
 
-        private int getLoadingRowPosition()
+        private int GetLoadingRowPosition()
         {
-            return _displayLoadingRow ? ItemCount - 1 : -1;
+            return displayLoadingRow ? ItemCount - 1 : -1;
         }
     }
 }
