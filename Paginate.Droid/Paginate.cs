@@ -30,9 +30,9 @@ namespace Paginate.Droid
             return new RecyclerPaginate.PaginateBuilder(recyclerView, callback);
         }
 
-        public static AbsListViewPaginate.Builder with(AbsListView absListView, Callbacks callback)
-        {
-            return new AbsListViewPaginate.Builder(absListView, callback);
-        }
+        //public static AbsListViewPaginate.Builder with(AbsListView absListView, Callbacks callback)
+        //{
+        //    return new AbsListViewPaginate.Builder(absListView, callback);
+        //}
     }
 }
